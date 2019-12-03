@@ -1,0 +1,11 @@
+{
+  "name": "f1",
+  "version": "1.0.0",
+  "description": "Our F1 forecast rates from f1news.ru",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "author": "Artur Trifonov",
+  "license": "ISC"
+}
