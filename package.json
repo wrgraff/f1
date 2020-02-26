@@ -9,6 +9,7 @@
   "author": "Artur Trifonov",
   "license": "ISC",
   "dependencies": {
+    "fs": "0.0.1-security",
     "jsdom": "^15.2.1",
     "needle": "^2.4.0"
   }

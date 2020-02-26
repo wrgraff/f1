@@ -1,5 +1,6 @@
 var needle = require('needle'),
-	jsdom = require('jsdom').JSDOM;
+	jsdom = require('jsdom').JSDOM,
+	fs = require('fs');
 
 const RACE = {
 	start: 149,
@@ -10,7 +11,7 @@ const PLAYER = {
 	wrgraff: 'wrgraff',
 	aiaks: 'aiaks_h'
 };
-let racesLinks = [];
+let races = [];
 
 getRaces(RACE.start, RACE.year, getLinkHandler);
 
@@ -40,17 +41,18 @@ function getRaces(raceId, currentYear, successHandler) {
 	});
 };
 
-function getLinkHandler(link, raceId, currentYear) {
-	racesLinks.push(link);
+function getLinkHandler(race, raceId, currentYear) {
+	races.push(race);
 	raceId++;
 
 	if (raceId <= RACE.end) {
 		getRaces(raceId, currentYear, getLinkHandler);
 	} else {
-		getRacesHandler(racesLinks);
+		getRacesHandler(races);
 	};
 };
 
-function getRacesHandler(links) {
-	console.log(links);
+function getRacesHandler(races) {
+	console.log(races);
+	fs.writeFileSync('./races.json', JSON.stringify(races));
 };
