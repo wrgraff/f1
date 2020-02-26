@@ -1,33 +1,56 @@
 var needle = require('needle'),
 	jsdom = require('jsdom').JSDOM;
 
-var raceId = 149;
-var racesLinks = [];
-
-while (raceId <= 240) {
-	getRaceLink(raceId, getLinkHandler);
-	raceId++;
+const RACE = {
+	start: 149,
+	end: 240,
+	year: 2015
 };
+const PLAYER = {
+	wrgraff: 'wrgraff',
+	aiaks: 'aiaks_h'
+};
+let racesLinks = [];
 
-function getRaceLink(raceId, successHanler, errorHandler) {
-	needle.get('https://www.f1news.ru/forecast/race/' + raceId + '/rating/?q=wrgraff', function(error, response) {
+getRaces(RACE.start, RACE.year, getLinkHandler);
+
+function getRaces(raceId, currentYear, successHandler) {
+	needle.get('https://www.f1news.ru/forecast/race/' + raceId + '/rating/?q=' + PLAYER.wrgraff, function(error, response) {
 		if (!error && response.statusCode == 200) {
 			let dom = new jsdom(response.body);
+			let name = dom.window.document.querySelector('.post_title').textContent.replace('Рейтинг участников ', '');
 			let link = dom.window.document.querySelector('.f1Table tbody tr td:nth-child(2) a');
 
-			if (link) {
-				successHanler(link.href);
-			} else {
-				successHanler('Null forecast');
-				console.log('Forecast for race #' + raceId + ' does not exist!');
+			if (name === 'Гран При Австралии') {
+				currentYear++;
 			};
+
+			successHandler({
+				id: raceId,
+				name: name,
+				year: currentYear,
+				link: link ? link.href : 'Null forecast'
+			}, raceId, currentYear);
 		} else {
-			successHanler('Null race');
-			console.log('Error on race #' + raceId + ': race whith this id does not exist!');
+			successHandler({
+				id: raceId,
+				name: 'Null race'
+			}, raceId, currentYear);
 		};
 	});
 };
 
-function getLinkHandler(link,) {
+function getLinkHandler(link, raceId, currentYear) {
 	racesLinks.push(link);
+	raceId++;
+
+	if (raceId <= RACE.end) {
+		getRaces(raceId, currentYear, getLinkHandler);
+	} else {
+		getRacesHandler(racesLinks);
+	};
+};
+
+function getRacesHandler(links) {
+	console.log(links);
 };
