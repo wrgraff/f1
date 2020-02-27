@@ -7,52 +7,72 @@ const RACE = {
 	end: 240,
 	year: 2015
 };
-const PLAYER = {
-	wrgraff: 'wrgraff',
-	aiaks: 'aiaks_h'
-};
-let races = [];
+const PLAYERS = [
+	{
+		name: 'wrGraff',
+		login: 'wrgraff'
+	},{
+		name: 'Aiaks',
+		login: 'aiaks_h'
+	}
+];
 
-getRaces(RACE.start, RACE.year, getLinkHandler);
+getRaces(RACE.start, RACE.year, []);
 
-function getRaces(raceId, currentYear, successHandler) {
-	needle.get('https://www.f1news.ru/forecast/race/' + raceId + '/rating/?q=' + PLAYER.wrgraff, function(error, response) {
+function getRaces(raceId, currentYear, result) {
+	let race = {
+		id: raceId
+	};
+	needle.get('https://www.f1news.ru/forecast/race/' + raceId + '/rating/', function(error, response) {
 		if (!error && response.statusCode == 200) {
 			let dom = new jsdom(response.body);
 			let name = dom.window.document.querySelector('.post_title').textContent.replace('Рейтинг участников ', '');
-			let link = dom.window.document.querySelector('.f1Table tbody tr td:nth-child(2) a');
 
 			if (name === 'Гран При Австралии') {
 				currentYear++;
 			};
 
-			successHandler({
-				id: raceId,
-				name: name,
-				year: currentYear,
-				link: link ? link.href : 'Null forecast'
-			}, raceId, currentYear);
+			race.name = name;
+			race.year = currentYear;
+
+			getUserLink(0, raceId, {}, getUserLinkHandler);
+			function getUserLinkHandler(forecasts) {
+				race.forecasts = forecasts;
+				getRacesHandler(raceId, currentYear, result, race);
+			};
 		} else {
-			successHandler({
-				id: raceId,
-				name: 'Null race'
-			}, raceId, currentYear);
+			getRacesHandler(raceId, currentYear, result, race);
 		};
 	});
 };
 
-function getLinkHandler(race, raceId, currentYear) {
-	races.push(race);
-	raceId++;
-
+function getRacesHandler(raceId, currentYear, result, race) {
 	if (raceId <= RACE.end) {
-		getRaces(raceId, currentYear, getLinkHandler);
+		console.log(race);
+		result.push(race);
+		getRaces(++raceId, currentYear, result);
 	} else {
-		getRacesHandler(races);
+		console.log(result);
+		fs.writeFileSync('./races.json', JSON.stringify(result));
 	};
 };
 
-function getRacesHandler(races) {
-	console.log(races);
-	fs.writeFileSync('./races.json', JSON.stringify(races));
+function getUserLink(playerIndex, raceId, forecasts, successHandler) {
+	result = {};
+	needle.get('https://www.f1news.ru/forecast/race/' + raceId + '/rating/?q=' + PLAYERS[playerIndex].login, function(error, response) {
+		if (!error && response.statusCode == 200) {
+			let dom = new jsdom(response.body);
+			let link = dom.window.document.querySelector('.f1Table tbody tr td:nth-child(2) a');
+
+			result.link = link ? link.href : 'Null forecast';
+		};
+
+		forecasts[PLAYERS[playerIndex].name] = result;
+
+		if (playerIndex == PLAYERS.length - 1) {
+			successHandler(forecasts);
+		} else {
+			getUserLink(++playerIndex, raceId, forecasts, successHandler);
+		};
+	});
 };
